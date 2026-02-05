@@ -15,6 +15,7 @@
 - Centralize shared utilities (helpers folder)
 - Keep files focused and small (<300 lines)
 - Early returns over deep nesting
+- UI text must always be lowercase (never start with capital letters)
 
 ## Tool Usage
 - Use subagents for MCP calls (Context7, Tavily) to preserve main context

@@ -93,7 +93,7 @@ function SortableTask({ task, depth, canIndent, canOutdent }: {
             size="icon"
             className="h-8 w-8"
             onClick={handleOutdent}
-            title="Outdent (Ctrl+[)"
+            title="outdent (ctrl+[)"
           >
             ←
           </Button>
@@ -104,7 +104,7 @@ function SortableTask({ task, depth, canIndent, canOutdent }: {
             size="icon"
             className="h-8 w-8"
             onClick={handleIndent}
-            title="Indent (Ctrl+])"
+            title="indent (ctrl+])"
           >
             →
           </Button>
@@ -213,7 +213,7 @@ export function TaskList() {
       <header className="border-b p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold">
-            {isStarredView ? 'Starred tasks' : currentList?.name || 'Select a list'}
+            {isStarredView ? 'starred tasks' : currentList?.name || 'select a list'}
           </h2>
           <Button variant="ghost" size="icon">
             <MoreVertical className="h-5 w-5" />
@@ -225,7 +225,7 @@ export function TaskList() {
         {selectedListId && (
           <div className="p-4 border-b">
             <Input
-              placeholder="Add a task"
+              placeholder="add a task"
               value={newTaskTitle}
               onChange={(e) => setNewTaskTitle(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -263,7 +263,7 @@ export function TaskList() {
 
           {tasks.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              No tasks yet. Add your first task above!
+              no tasks yet. add your first task above!
             </div>
           )}
         </div>
