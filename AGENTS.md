@@ -32,6 +32,16 @@
 - DB operations in db/
 - Store logic in stores/ (Zustand)
 
+## Data & DB Rails
+- UI components must not access Dexie; only repositories/services query DB
+- Default queries exclude records where deleted_at != null (history/trash only)
+- Task invariants: completed => completed_at set; active => completed_at null
+- parent_id must exist in same list_id; max depth 3
+- Complex ops (indent/outdent/reorder/list delete/recurring spawn) are single atomic mutations
+- Drag & drop: move subtree; reorder only within same parent_id lane; no cross-list parenting
+- Persisted UI state must be versioned and tolerate missing IDs
+- Changes to repos/ordering/hierarchy must include or update unit tests
+
 ## Documentation
 
 ### Project Docs (docs/)
