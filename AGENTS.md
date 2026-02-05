@@ -32,3 +32,9 @@
 - Store logic in stores/ (Zustand)
 
 ## Project Observations
+- Path aliases: `@/` maps to `./src/*` (configured in tsconfig.app.json and vite.config.ts)
+- shadcn/ui components located at `src/components/ui/`
+- Store: Zustand at `src/stores/appStore.ts`
+- DB: Dexie at `src/db/index.ts` with repositories in `src/db/repositories.ts`
+- Types: `src/db/types.ts` contains shared DB interfaces
+- Layout components in `src/components/layout/` (Sidebar, TaskList, TaskDetails)
