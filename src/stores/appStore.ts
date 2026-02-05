@@ -12,6 +12,7 @@ interface AppState {
   sortMode: SortMode
   loading: boolean
   showCompletedHistory: boolean
+  expandedListId: string | null
 }
 
 interface AppActions {
@@ -34,6 +35,7 @@ interface AppActions {
   setSortMode: (mode: SortMode) => void
   sortTasks: (tasks: Task[]) => Task[]
   toggleShowCompletedHistory: () => void
+  setExpandedListId: (id: string | null) => void
   hydrate: () => void
 }
 
@@ -73,6 +75,7 @@ export const useAppStore = create<AppState & AppActions>()(
       sortMode: 'my_order',
       loading: false,
       showCompletedHistory: false,
+      expandedListId: null,
 
       loadLists: async () => {
         set({ loading: true })
@@ -220,6 +223,10 @@ export const useAppStore = create<AppState & AppActions>()(
         }
       },
 
+      setExpandedListId: (id: string | null) => {
+        set({ expandedListId: id })
+      },
+
       hydrate: () => {
         const { selectedListId, selectedTaskId, showCompletedHistory } = get()
         if (selectedListId) {
@@ -241,7 +248,8 @@ export const useAppStore = create<AppState & AppActions>()(
         selectedListId: state.selectedListId,
         selectedTaskId: state.selectedTaskId,
         sortMode: state.sortMode,
-        showCompletedHistory: state.showCompletedHistory
+        showCompletedHistory: state.showCompletedHistory,
+        expandedListId: state.expandedListId
       })
     }
   )

@@ -2,8 +2,9 @@
 
 ## Store Structure
 - Single store: `src/stores/appStore.ts`
-- State: `lists`, `tasks`, `selectedListId`, `selectedTaskId`, `sortMode`, `loading`
+- State: `lists`, `tasks`, `completedTasks`, `selectedListId`, `selectedTaskId`, `sortMode`, `loading`, `showCompletedHistory`, `expandedListId`
 - All DB operations go through repositories
+- Persistence: Selected list/task, sort mode, history toggle, and expanded history list persist across reloads (localStorage via zustand/persist)
 
 ## Sorting Pattern
 - Helper function `sortTasksFn()` defined separately
@@ -21,3 +22,4 @@
 ## Task Reloading
 - After structural changes (indent/outdent), full task reload: `loadTasks(listId)`
 - Ensures hierarchical structure stays in sync with DB
+- On app load, `hydrate()` action restores persisted state: selected list/task, history visibility, expanded history list

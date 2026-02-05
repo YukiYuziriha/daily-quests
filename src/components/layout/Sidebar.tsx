@@ -1,11 +1,9 @@
 import { useAppStore } from '@/stores/appStore'
 import { Plus, Star, ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
 
 export function Sidebar() {
-  const { lists, selectedListId, createList, selectList, deleteList, completedTasks, showCompletedHistory, toggleShowCompletedHistory } = useAppStore()
-  const [expandedListId, setExpandedListId] = useState<string | null>(null)
+  const { lists, selectedListId, createList, selectList, deleteList, completedTasks, showCompletedHistory, toggleShowCompletedHistory, expandedListId, setExpandedListId } = useAppStore()
 
   const handleCreateList = async () => {
     const name = prompt('List name:')
