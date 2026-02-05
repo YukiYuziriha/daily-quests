@@ -63,9 +63,7 @@ export class TaskRepository {
 
   static async getStarred(): Promise<Task[]> {
     return await db.tasks
-      .where('starred')
-      .equals(1)
-      .and((t) => t.status === 'active' && t.deleted_at === null)
+      .filter((t) => t.starred && t.status === 'active' && t.deleted_at === null)
       .reverse()
       .sortBy('starred_at')
   }
