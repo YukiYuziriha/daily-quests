@@ -221,7 +221,7 @@ export const useAppStore = create<AppState & AppActions>()(
       },
 
       hydrate: () => {
-        const { selectedListId, selectedTaskId } = get()
+        const { selectedListId, selectedTaskId, showCompletedHistory } = get()
         if (selectedListId) {
           get().loadTasks(selectedListId)
         } else {
@@ -229,6 +229,9 @@ export const useAppStore = create<AppState & AppActions>()(
         }
         if (selectedTaskId) {
           get().selectTask(selectedTaskId)
+        }
+        if (showCompletedHistory) {
+          get().loadCompletedTasks()
         }
       }
     }),

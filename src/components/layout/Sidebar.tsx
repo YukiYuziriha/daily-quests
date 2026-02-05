@@ -52,6 +52,23 @@ export function Sidebar() {
             Lists
           </div>
 
+          {lists.map((list) => (
+            <div key={list.id} className="relative group">
+              <button
+                onClick={() => selectList(list.id)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left ${
+                  selectedListId === list.id ? 'bg-accent' : ''
+                }`}
+              >
+                <span className="flex-1 truncate">{list.name}</span>
+                <Trash2
+                  className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
+                  onClick={(e) => handleDeleteList(list.id, e)}
+                />
+              </button>
+            </div>
+          ))}
+
           <button
             onClick={toggleShowCompletedHistory}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left mt-4"
@@ -94,23 +111,6 @@ export function Sidebar() {
               )}
             </div>
           )}
-
-          {lists.map((list) => (
-            <div key={list.id} className="relative group">
-              <button
-                onClick={() => selectList(list.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left ${
-                  selectedListId === list.id ? 'bg-accent' : ''
-                }`}
-              >
-                <span className="flex-1 truncate">{list.name}</span>
-                <Trash2
-                  className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-destructive"
-                  onClick={(e) => handleDeleteList(list.id, e)}
-                />
-              </button>
-            </div>
-          ))}
         </div>
       </div>
 
