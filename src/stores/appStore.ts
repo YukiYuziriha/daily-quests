@@ -252,7 +252,7 @@ export const useAppStore = create<AppState & AppActions>()(
       },
 
       hydrate: async () => {
-        const { selectedListId, selectedTaskId, selectedCompletedTask, showCompletedHistory } = get()
+        const { selectedListId, selectedTaskId, selectedCompletedTask } = get()
         if (selectedListId) {
           get().loadTasks(selectedListId)
         } else {
@@ -264,11 +264,8 @@ export const useAppStore = create<AppState & AppActions>()(
         if (selectedCompletedTask) {
           await get().selectCompletedTask(selectedCompletedTask.id)
         }
-        if (showCompletedHistory) {
-          await get().loadCompletedTasks()
-        } else {
-          get().loadAllLists()
-        }
+        await get().loadCompletedTasks()
+        get().loadAllLists()
       }
     }),
     {
