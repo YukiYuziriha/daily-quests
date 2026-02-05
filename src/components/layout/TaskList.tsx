@@ -1,8 +1,10 @@
 import { useAppStore } from '@/stores/appStore'
-import { MoreVertical, Calendar, Star, GripVertical } from 'lucide-react'
+import { MoreVertical, Calendar, Star, GripVertical, Trash2, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import type { Task } from '@/db/types'
@@ -109,27 +111,40 @@ function SortableTask({ task, depth, canIndent, canOutdent }: {
             →
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={(e) => {
-            e.stopPropagation()
-          }}
-        >
-          <MoreVertical className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   )
 }
 
 export function TaskList() {
-  const { tasks, selectedListId, lists, createTask, selectedTaskId, toggleTaskComplete, indentTask, outdentTask, selectTask } = useAppStore()
+  const { tasks, selectedListId, lists, createTask, selectedTaskId, toggleTaskComplete, indentTask, outdentTask, selectTask, deleteList, updateList } = useAppStore()
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [newListName, setNewListName] = useState('')
 
   const currentList = lists.find((l) => l.id === selectedListId)
   const isStarredView = selectedListId === null
+
+  const handleDeleteList = async () => {
+    if (confirm('are you sure you want to delete this list and all its tasks?')) {
+      await deleteList(selectedListId!)
+    }
+  }
+
+  const openRenameDialog = () => {
+    if (currentList) {
+      setNewListName(currentList.name)
+      setRenameDialogOpen(true)
+    }
+  }
+
+  const handleRenameList = async () => {
+    if (selectedListId && newListName.trim()) {
+      await updateList(selectedListId, newListName.trim())
+      setRenameDialogOpen(false)
+      setNewListName('')
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -215,9 +230,25 @@ export function TaskList() {
           <h2 className="text-2xl font-semibold">
             {isStarredView ? 'starred tasks' : currentList?.name || 'select a list'}
           </h2>
-          <Button variant="ghost" size="icon">
-            <MoreVertical className="h-5 w-5" />
-          </Button>
+          {currentList && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={openRenameDialog}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  rename
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDeleteList} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </header>
 
@@ -268,6 +299,35 @@ export function TaskList() {
           )}
         </div>
       </div>
+
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>rename list</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={newListName}
+            onChange={(e) => setNewListName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleRenameList()
+              } else if (e.key === 'Escape') {
+                setRenameDialogOpen(false)
+              }
+            }}
+            placeholder="enter list name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRenameDialogOpen(false)}>
+              cancel
+            </Button>
+            <Button onClick={handleRenameList}>
+              save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
