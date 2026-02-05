@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import type { Task, RepeatRule } from '@/db/types'
 
 export function TaskDetails() {
-  const { tasks, selectedTaskId, selectedCompletedTask, updateTask, deleteTask, allLists, toggleTaskStar } = useAppStore()
+  const { tasks, selectedTaskId, selectedCompletedTask, updateTask, deleteTask, allLists, toggleTaskStar, selectTask, selectCompletedTask } = useAppStore()
   const [title, setTitle] = useState('')
   const [notes, setNotes] = useState('')
   const [dueDate, setDueDate] = useState('')
@@ -84,7 +84,7 @@ export function TaskDetails() {
     <aside className="w-96 border-l bg-muted/10 h-screen flex flex-col">
       <header className="border-b p-4 flex items-center justify-between">
         <h3 className="font-semibold">task details</h3>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { selectTask(null); selectCompletedTask(null) }}>
           <X className="h-4 w-4" />
         </Button>
       </header>
