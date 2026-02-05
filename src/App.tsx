@@ -1,10 +1,21 @@
+import { useEffect } from 'react'
+import { useAppStore } from './stores/appStore'
+import { Sidebar } from './components/layout/Sidebar'
+import { TaskList } from './components/layout/TaskList'
+import { TaskDetails } from './components/layout/TaskDetails'
+
 function App() {
+  const loadLists = useAppStore((state) => state.loadLists)
+
+  useEffect(() => {
+    loadLists()
+  }, [loadLists])
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto p-8">
-        <h1 className="text-4xl font-bold mb-4">Daily Quests</h1>
-        <p className="text-muted-foreground">Google Tasks clone</p>
-      </div>
+    <div className="flex h-screen bg-background text-foreground">
+      <Sidebar />
+      <TaskList />
+      <TaskDetails />
     </div>
   )
 }
