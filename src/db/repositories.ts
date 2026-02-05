@@ -5,6 +5,8 @@ import { addDays, addWeeks, addMonths, addYears, parseISO } from 'date-fns'
 
 const MAX_DEPTH = 3
 
+type TaskWithChildren = Task & { children: TaskWithChildren[] }
+
 export class ListRepository {
   static async getAll(): Promise<TaskList[]> {
     return await db.lists.where('deleted_at').equals(0 as any).toArray()
@@ -180,7 +182,7 @@ export class TaskRepository {
     return newDepth <= MAX_DEPTH
   }
 
-  static async canOutdent(id: string, listId: string): Promise<boolean> {
+  static async canOutdent(id: string): Promise<boolean> {
     const task = await this.getById(id)
     return !!(task && task.parent_id)
   }
@@ -217,8 +219,8 @@ export class TaskRepository {
   }
 
   private static buildTaskTree(tasks: Task[]): Task[] {
-    const taskMap = new Map<string, Task & { children: Task[] }>()
-    const rootTasks: Array<Task & { children: Task[] }> = []
+    const taskMap = new Map<string, TaskWithChildren>()
+    const rootTasks: TaskWithChildren[] = []
 
     tasks.forEach((task) => {
       taskMap.set(task.id, { ...task, children: [] })
@@ -236,7 +238,7 @@ export class TaskRepository {
     return this.flattenTaskTree(rootTasks)
   }
 
-  private static flattenTaskTree(tasks: Array<Task & { children: Task[] }>): Task[] {
+  private static flattenTaskTree(tasks: TaskWithChildren[]): Task[] {
     let result: Task[] = []
 
     tasks.forEach((task) => {
