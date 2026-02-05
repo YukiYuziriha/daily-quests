@@ -25,6 +25,8 @@ interface AppActions {
   deleteTask: (id: string) => Promise<void>
   toggleTaskComplete: (id: string) => Promise<void>
   toggleTaskStar: (id: string) => Promise<void>
+  indentTask: (id: string) => Promise<boolean>
+  outdentTask: (id: string) => Promise<boolean>
   setSortMode: (mode: SortMode) => void
   sortTasks: (tasks: Task[]) => Task[]
 }
@@ -163,6 +165,26 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
     set((state) => ({
       tasks: sortTasksFn(state.tasks.map((t) => (t.id === id ? task : t)), state.sortMode)
     }))
+  },
+
+  indentTask: async (id: string) => {
+    const listId = get().selectedListId
+    if (!listId) return false
+    const success = await TaskRepository.indentTask(id, listId)
+    if (success) {
+      await get().loadTasks(listId)
+    }
+    return success
+  },
+
+  outdentTask: async (id: string) => {
+    const listId = get().selectedListId
+    if (!listId) return false
+    const success = await TaskRepository.outdentTask(id, listId)
+    if (success) {
+      await get().loadTasks(listId)
+    }
+    return success
   },
 
   setSortMode: (mode: SortMode) => {

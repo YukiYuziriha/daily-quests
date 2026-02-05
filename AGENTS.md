@@ -2,12 +2,11 @@
 
 ## Decision Making
 - Pragmatism over perfection
-- Build for the problem, not the hype
+- Build for problem, not the hype
 - When in doubt, ship simple
 - Optimize for iteration speed
 - Avoid premature abstraction
 - Choose boring tech over bleeding edge
-- Update Project Observations section when discovering non-obvious patterns
 
 ## Code Style
 - Readable > Clean > Clever
@@ -22,7 +21,7 @@
 - For library API questions → use Context7 first (docs change; training data stale)
 - For time-sensitive info → use Tavily search
 - Never guess API signatures or current best practices — verify with tools
-- Before grep: Check AGENTS.md Project Observations for architectural patterns and known crutches
+- Before grep: Check docs/ for relevant patterns and crutches
 
 ## Centralization
 - One source of truth for DB schema
@@ -32,25 +31,19 @@
 - DB operations in db/
 - Store logic in stores/ (Zustand)
 
-## Project Observations
+## Documentation
 
-### Architecture & Crutches
-- **verbatimModuleSyntax**: Requires `type` keyword for type imports (`import type { X }`) - causes build errors if missing
-- **Path aliases**: Must be configured in BOTH `tsconfig.app.json` (paths) AND `vite.config.ts` (resolve.alias) - missing either breaks imports
-- **Dexie compound indexes**: Use array syntax like `[list_id+parent_id+status]` for multi-key queries
-- **shadcn/ui installation**: Creates `@/` directory outside `src/` by default - components must be moved to `src/components/ui/`
-- **Task hierarchy**: Stored flat in DB with `parent_id` - `buildTaskTree()` converts to nested structure for UI
-- **Subtask depth**: Calculated recursively at runtime (max depth = 3), not stored in DB
-- **Soft delete pattern**: Uses `deleted_at` timestamp instead of actual deletion - queries must filter `deleted_at === null`
-- **Zustand sort function**: Defined as helper then exposed in store - both needed for internal consistency
-- **Recurring tasks**: Creates NEW task on completion (doesn't modify existing task) - leaves audit trail naturally
-- **PWA assets**: Manifest references non-existent PNGs (pwa-192x192.png, pwa-512x512.png) - builds successfully but missing icons
-- **TaskRepository.getByListId**: Returns flattened hierarchical tasks (depth-first traversal), not flat list from DB
-- **Dexie equals() with compound indexes**: Requires exact array match including order - `[listId, null, 'active']` not `[listId, 'active']`
+### Project Docs (docs/)
+- **typescript-config.md** - TypeScript compilation rules, path aliases, verbatimModuleSyntax
+- **database.md** - Dexie schema, compound indexes, soft delete, task hierarchy
+- **state-management.md** - Zustand store pattern, data flow, sorting, reloading
+- **task-features.md** - Recurring tasks, subtasks/indentation, sorting modes
+- **pwa-config.md** - vite-plugin-pwa setup, service worker, offline caching
+- **components-ui.md** - shadcn/ui setup, layout components, Tailwind theming
+- **file-structure.md** - Directory layout and file organization
 
-### File Locations
-- shadcn/ui: `src/components/ui/`
-- Store: `src/stores/appStore.ts`
-- DB: `src/db/index.ts`, repositories at `src/db/repositories.ts`
-- Types: `src/db/types.ts`
-- Layout: `src/components/layout/Sidebar.tsx`, `TaskList.tsx`, `TaskDetails.tsx`
+### Documentation Rules
+- **Update or create docs** when discovering non-obvious patterns, crutches, or architectural decisions
+- Keep docs brief and meta-level (one-page overviews preferred)
+- Reference existing docs before making assumptions about architecture
+- Each doc should focus on a single aspect of the project

@@ -8,7 +8,7 @@ import { format } from 'date-fns'
 import type { Task } from '@/db/types'
 
 export function TaskList() {
-  const { tasks, selectedListId, lists, createTask, toggleTaskComplete, selectTask, selectedTaskId } = useAppStore()
+  const { tasks, selectedListId, lists, createTask, toggleTaskComplete, selectTask, selectedTaskId, indentTask, outdentTask } = useAppStore()
   const [newTaskTitle, setNewTaskTitle] = useState('')
 
   const currentList = lists.find((l) => l.id === selectedListId)
@@ -39,6 +39,22 @@ export function TaskList() {
     }
   }
 
+  const getTaskDepth = (task: Task, allTasks: Task[]): number => {
+    if (!task.parent_id) return 0
+    const parent = allTasks.find((t) => t.id === task.parent_id)
+    return parent ? getTaskDepth(parent, allTasks) + 1 : 0
+  }
+
+  const handleIndent = async (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation()
+    await indentTask(taskId)
+  }
+
+  const handleOutdent = async (e: React.MouseEvent, taskId: string) => {
+    e.stopPropagation()
+    await outdentTask(taskId)
+  }
+
   return (
     <main className="flex-1 flex flex-col h-screen">
       <header className="border-b p-4">
@@ -65,50 +81,81 @@ export function TaskList() {
         )}
 
         <div className="p-2">
-          {tasks.map((task: Task) => (
-            <div
-              key={task.id}
-              onClick={() => selectTask(task.id)}
-              className={`flex items-start gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors ${
-                selectedTaskId === task.id ? 'bg-accent' : ''
-              }`}
-            >
-              <Checkbox
-                checked={task.status === 'completed'}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  toggleTaskComplete(task.id)
-                }}
-              />
+          {tasks.map((task: Task) => {
+            const depth = getTaskDepth(task, tasks)
+            const canIndent = depth < 3 && task.parent_id
+            const canOutdent = task.parent_id
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
-                    {task.title}
-                  </span>
-                  {task.starred && <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />}
+            return (
+              <div
+                key={task.id}
+                onClick={() => selectTask(task.id)}
+                className={`flex items-start gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors ${
+                  selectedTaskId === task.id ? 'bg-accent' : ''
+                }`}
+                style={{ marginLeft: `${depth * 16}px` }}
+              >
+                <Checkbox
+                  checked={task.status === 'completed'}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleTaskComplete(task.id)
+                  }}
+                />
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm ${task.status === 'completed' ? 'line-through text-muted-foreground' : ''}`}>
+                      {task.title}
+                    </span>
+                    {task.starred && <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />}
+                  </div>
+
+                  {task.due_date && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(task.due_date), 'MMM d, yyyy')}
+                    </div>
+                  )}
                 </div>
 
-                {task.due_date && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                    <Calendar className="h-3 w-3" />
-                    {format(new Date(task.due_date), 'MMM d, yyyy')}
-                  </div>
-                )}
+                <div className="flex items-center gap-1">
+                  {canOutdent && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => handleOutdent(e, task.id)}
+                      title="Outdent (Ctrl+[)"
+                    >
+                      ←
+                    </Button>
+                  )}
+                  {canIndent && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => handleIndent(e, task.id)}
+                      title="Indent (Ctrl+])"
+                    >
+                      →
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                    }}
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation()
-                }}
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+            )
+          })}
 
           {tasks.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
