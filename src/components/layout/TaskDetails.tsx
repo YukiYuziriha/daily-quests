@@ -170,7 +170,7 @@ export function TaskDetails() {
         <Separator />
 
         <div className="text-xs text-muted-foreground">
-          list: {list ? (list.deleted_at ? `${list.name} (deleted)` : list.name) : 'unknown list'}
+          list: {list ? (list.deleted_at ? `${list.name} (deleted)` : list.name) : task.list_name}
         </div>
       </div>
 

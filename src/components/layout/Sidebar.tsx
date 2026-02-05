@@ -8,7 +8,7 @@ import { useState } from 'react'
 import type { TaskList } from '@/db/types'
 
 export function Sidebar() {
-  const { lists, selectedListId, createList, selectList, deleteList, updateList, completedTasks, showCompletedHistory, toggleShowCompletedHistory, expandedListId, setExpandedListId, selectCompletedTask } = useAppStore()
+  const { lists, allLists, selectedListId, createList, selectList, deleteList, updateList, completedTasks, showCompletedHistory, toggleShowCompletedHistory, expandedListId, setExpandedListId, selectCompletedTask } = useAppStore()
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [renamingListId, setRenamingListId] = useState<string | null>(null)
   const [newListName, setNewListName] = useState('')
@@ -45,11 +45,13 @@ export function Sidebar() {
 
   const tasksByList = completedTasks.reduce((acc, task) => {
     if (!acc[task.list_id]) {
-      acc[task.list_id] = { list: lists.find((l: TaskList) => l.id === task.list_id), tasks: [] }
+      const list = allLists.find(l => l.id === task.list_id)
+      const listName = list ? (list.deleted_at ? `${list.name} (deleted)` : list.name) : task.list_name
+      acc[task.list_id] = { listName, tasks: [] }
     }
     acc[task.list_id].tasks.push(task)
     return acc
-  }, {} as Record<string, { list: TaskList | undefined; tasks: typeof completedTasks }>)
+  }, {} as Record<string, { listName: string; tasks: typeof completedTasks }>)
 
   const handleSelectCompletedTask = async (taskId: string) => {
     await selectCompletedTask(taskId)
@@ -79,9 +81,9 @@ export function Sidebar() {
 
           {lists.map((list) => (
             <div key={list.id} className="relative group">
-              <button
+              <div
                 onClick={() => selectList(list.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left ${
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left cursor-pointer ${
                   selectedListId === list.id ? 'bg-accent' : ''
                 }`}
               >
@@ -108,7 +110,7 @@ export function Sidebar() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </button>
+              </div>
             </div>
           ))}
 
@@ -123,10 +125,9 @@ export function Sidebar() {
 
           {showCompletedHistory && (
             <div className="mt-2 space-y-2 px-2">
-              {Object.entries(tasksByList).map(([listId, { list, tasks }]) => {
+              {Object.entries(tasksByList).map(([listId, { listName, tasks }]) => {
                 if (tasks.length === 0) return null
                 const isExpanded = expandedListId === listId
-                const listName = list ? (list.deleted_at ? `${list.name} (deleted)` : list.name) : 'unknown list'
                 return (
                   <div key={listId} className="border rounded-lg">
                     <button
