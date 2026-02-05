@@ -3,7 +3,7 @@ import { MoreVertical, Calendar, Star, GripVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import type { Task } from '@/db/types'
 import {
@@ -125,7 +125,7 @@ function SortableTask({ task, depth, canIndent, canOutdent }: {
 }
 
 export function TaskList() {
-  const { tasks, selectedListId, lists, createTask } = useAppStore()
+  const { tasks, selectedListId, lists, createTask, selectedTaskId, toggleTaskComplete, indentTask, outdentTask, selectTask } = useAppStore()
   const [newTaskTitle, setNewTaskTitle] = useState('')
 
   const currentList = lists.find((l) => l.id === selectedListId)
@@ -137,6 +137,30 @@ export function TaskList() {
       coordinateGetter: sortableKeyboardCoordinates
     })
   )
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+        return
+      }
+
+      if (e.key === 'Escape' && selectedTaskId) {
+        selectTask(null)
+      } else if (e.key === ' ' && selectedTaskId) {
+        e.preventDefault()
+        toggleTaskComplete(selectedTaskId)
+      } else if (e.key === ']' && e.ctrlKey && selectedTaskId) {
+        e.preventDefault()
+        indentTask(selectedTaskId)
+      } else if (e.key === '[' && e.ctrlKey && selectedTaskId) {
+        e.preventDefault()
+        outdentTask(selectedTaskId)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedTaskId, toggleTaskComplete, indentTask, outdentTask, selectTask])
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
