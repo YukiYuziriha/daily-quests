@@ -5,10 +5,12 @@ import { ListRepository, TaskRepository } from '../db/repositories'
 
 interface AppState {
   lists: TaskList[]
+  allLists: TaskList[]
   tasks: Task[]
   completedTasks: Task[]
   selectedListId: string | null
   selectedTaskId: string | null
+  selectedCompletedTask: Task | null
   sortMode: SortMode
   loading: boolean
   showCompletedHistory: boolean
@@ -20,12 +22,14 @@ interface AppActions {
   loadTasks: (listId: string) => Promise<void>
   loadStarredTasks: () => Promise<void>
   loadCompletedTasks: () => Promise<void>
+  loadAllLists: () => Promise<void>
   createList: (name: string) => Promise<TaskList>
   updateList: (id: string, name: string) => Promise<void>
   deleteList: (id: string) => Promise<void>
   selectList: (id: string | null) => void
   selectTask: (id: string | null) => void
-  createTask: (data: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'order' | 'completed_at' | 'starred_at'>) => Promise<Task>
+  selectCompletedTask: (id: string | null) => Promise<void>
+  createTask: (data: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'order' | 'completed_at' | 'starred_at' | 'list_name'>) => Promise<Task>
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>
   deleteTask: (id: string) => Promise<void>
   toggleTaskComplete: (id: string) => Promise<void>
@@ -68,10 +72,12 @@ export const useAppStore = create<AppState & AppActions>()(
   persist(
     (set, get) => ({
       lists: [],
+      allLists: [],
       tasks: [],
       completedTasks: [],
       selectedListId: null,
       selectedTaskId: null,
+      selectedCompletedTask: null,
       sortMode: 'my_order',
       loading: false,
       showCompletedHistory: false,
@@ -98,7 +104,13 @@ export const useAppStore = create<AppState & AppActions>()(
       loadCompletedTasks: async () => {
         set({ loading: true })
         const tasks = await TaskRepository.getAllCompleted()
-        set({ completedTasks: tasks, loading: false })
+        const allLists = await ListRepository.getAllIncludingDeleted()
+        set({ completedTasks: tasks, allLists, loading: false })
+      },
+
+      loadAllLists: async () => {
+        const allLists = await ListRepository.getAllIncludingDeleted()
+        set({ allLists })
       },
 
       createList: async (name: string) => {
@@ -133,7 +145,16 @@ export const useAppStore = create<AppState & AppActions>()(
       },
 
       selectTask: (id: string | null) => {
-        set({ selectedTaskId: id })
+        set({ selectedTaskId: id, selectedCompletedTask: null })
+      },
+
+      selectCompletedTask: async (id: string | null) => {
+        if (!id) {
+          set({ selectedCompletedTask: null })
+          return
+        }
+        const task = await TaskRepository.getById(id)
+        set({ selectedCompletedTask: task || null })
       },
 
       createTask: async (data) => {
@@ -164,13 +185,16 @@ export const useAppStore = create<AppState & AppActions>()(
 
         set((state) => {
           if (task.status === 'completed') {
+            const updatedCompletedTasks = sortTasksFn([task, ...state.completedTasks], 'starred_recently')
             return {
               tasks: state.tasks.filter((t) => t.id !== id),
-              selectedTaskId: state.selectedTaskId === id ? null : state.selectedTaskId
+              selectedTaskId: state.selectedTaskId === id ? null : state.selectedTaskId,
+              completedTasks: state.showCompletedHistory ? updatedCompletedTasks : state.completedTasks
             }
           } else {
             return {
-              tasks: sortTasksFn(state.tasks.map((t) => (t.id === id ? task : t)), state.sortMode)
+              tasks: sortTasksFn(state.tasks.map((t) => (t.id === id ? task : t)), state.sortMode),
+              completedTasks: state.completedTasks.filter((t) => t.id !== id)
             }
           }
         })
@@ -215,11 +239,11 @@ export const useAppStore = create<AppState & AppActions>()(
         return sortTasksFn(tasks, get().sortMode)
       },
 
-      toggleShowCompletedHistory: () => {
+      toggleShowCompletedHistory: async () => {
         const show = !get().showCompletedHistory
         set({ showCompletedHistory: show })
-        if (show && get().completedTasks.length === 0) {
-          get().loadCompletedTasks()
+        if (show) {
+          await get().loadCompletedTasks()
         }
       },
 
@@ -227,8 +251,8 @@ export const useAppStore = create<AppState & AppActions>()(
         set({ expandedListId: id })
       },
 
-      hydrate: () => {
-        const { selectedListId, selectedTaskId, showCompletedHistory } = get()
+      hydrate: async () => {
+        const { selectedListId, selectedTaskId, selectedCompletedTask, showCompletedHistory } = get()
         if (selectedListId) {
           get().loadTasks(selectedListId)
         } else {
@@ -237,8 +261,13 @@ export const useAppStore = create<AppState & AppActions>()(
         if (selectedTaskId) {
           get().selectTask(selectedTaskId)
         }
+        if (selectedCompletedTask) {
+          await get().selectCompletedTask(selectedCompletedTask.id)
+        }
         if (showCompletedHistory) {
-          get().loadCompletedTasks()
+          await get().loadCompletedTasks()
+        } else {
+          get().loadAllLists()
         }
       }
     }),
@@ -249,7 +278,8 @@ export const useAppStore = create<AppState & AppActions>()(
         selectedTaskId: state.selectedTaskId,
         sortMode: state.sortMode,
         showCompletedHistory: state.showCompletedHistory,
-        expandedListId: state.expandedListId
+        expandedListId: state.expandedListId,
+        selectedCompletedTask: state.selectedCompletedTask
       })
     }
   )

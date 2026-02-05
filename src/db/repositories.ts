@@ -16,6 +16,10 @@ export class ListRepository {
     return await db.lists.get(id)
   }
 
+  static async getAllIncludingDeleted(): Promise<TaskList[]> {
+    return await db.lists.toArray()
+  }
+
   static async create(name: string): Promise<TaskList> {
     const now = Date.now()
     const list: TaskList = {
@@ -71,11 +75,13 @@ export class TaskRepository {
     return await db.tasks.get(id)
   }
 
-  static async create(data: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'order' | 'completed_at' | 'starred_at'>): Promise<Task> {
+  static async create(data: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'order' | 'completed_at' | 'starred_at' | 'list_name'>): Promise<Task> {
     const now = Date.now()
+    const list = await db.lists.get(data.list_id)
     const task: Task = {
       ...data,
       id: ulid(),
+      list_name: list?.name || 'Unknown',
       created_at: now,
       updated_at: now,
       order: now,
@@ -166,7 +172,6 @@ export class TaskRepository {
     return await db.tasks
       .where('status')
       .equals('completed')
-      .and((t) => t.deleted_at === null)
       .reverse()
       .sortBy('completed_at')
   }

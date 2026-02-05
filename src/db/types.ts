@@ -12,6 +12,7 @@ export interface RepeatRule {
 export interface Task {
   id: string
   list_id: string
+  list_name: string
   parent_id: string | null
   title: string
   notes: string
