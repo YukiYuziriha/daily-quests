@@ -17,6 +17,12 @@
 - Keep files focused and small (<300 lines)
 - Early returns over deep nesting
 
+## Tool Usage
+- Use subagents for MCP calls (Context7, Tavily) to preserve main context
+- For library API questions → use Context7 first (docs change; training data stale)
+- For time-sensitive info → use Tavily search
+- Never guess API signatures or current best practices — verify with tools
+
 ## Centralization
 - One source of truth for DB schema
 - Shared types for data shapes
