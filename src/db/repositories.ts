@@ -64,8 +64,7 @@ export class TaskRepository {
   static async getStarred(): Promise<Task[]> {
     return await db.tasks
       .filter((t) => t.starred && t.status === 'active' && t.deleted_at === null)
-      .reverse()
-      .sortBy('starred_at')
+      .sortBy('order')
   }
 
   static async getById(id: string): Promise<Task | undefined> {
@@ -159,6 +158,15 @@ export class TaskRepository {
     return await db.tasks
       .where('[list_id+parent_id+status]')
       .equals([listId, null, 'completed'] as any)
+      .reverse()
+      .sortBy('completed_at')
+  }
+
+  static async getAllCompleted(): Promise<Task[]> {
+    return await db.tasks
+      .where('status')
+      .equals('completed')
+      .and((t) => t.deleted_at === null)
       .reverse()
       .sortBy('completed_at')
   }
