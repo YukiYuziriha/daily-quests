@@ -15,6 +15,9 @@ interface AppState {
   loading: boolean
   showCompletedHistory: boolean
   expandedListId: string | null
+  pinnedListIds: string[]
+  pinnedTasks: Record<string, Task[]>
+  viewMode: 'list' | 'pinned'
 }
 
 interface AppActions {
@@ -40,6 +43,12 @@ interface AppActions {
   sortTasks: (tasks: Task[]) => Task[]
   toggleShowCompletedHistory: () => void
   setExpandedListId: (id: string | null) => void
+  reorderLists: (ids: string[]) => Promise<void>
+  togglePinnedList: (id: string) => Promise<void>
+  loadPinnedTasks: (listId: string) => Promise<void>
+  refreshPinnedList: (listId: string) => Promise<void>
+  reorderPinnedLists: (ids: string[]) => void
+  setViewMode: (mode: 'list' | 'pinned') => void
   hydrate: () => void
 }
 
@@ -82,10 +91,14 @@ export const useAppStore = create<AppState & AppActions>()(
       loading: false,
       showCompletedHistory: false,
       expandedListId: null,
+      pinnedListIds: [],
+      pinnedTasks: {},
+      viewMode: 'list',
 
       loadLists: async () => {
         set({ loading: true })
         const lists = await ListRepository.getAll()
+        lists.sort((a, b) => a.order - b.order)
         set({ lists, loading: false })
       },
 
@@ -110,6 +123,7 @@ export const useAppStore = create<AppState & AppActions>()(
 
       loadAllLists: async () => {
         const allLists = await ListRepository.getAllIncludingDeleted()
+        allLists.sort((a, b) => a.order - b.order)
         set({ allLists })
       },
 
@@ -126,12 +140,32 @@ export const useAppStore = create<AppState & AppActions>()(
         }))
       },
 
+      reorderLists: async (ids: string[]) => {
+        await Promise.all(ids.map((id, index) => ListRepository.update(id, { order: index * 1000 })))
+        set((state) => {
+          const listMap = new Map(state.lists.map((list) => [list.id, list]))
+          const ordered = ids
+            .map((id, index) => {
+              const list = listMap.get(id)
+              if (!list) return null
+              return { ...list, order: index * 1000 }
+            })
+            .filter((list): list is TaskList => list !== null)
+
+          ordered.sort((a, b) => a.order - b.order)
+          return { lists: ordered }
+        })
+      },
+
       deleteList: async (id: string) => {
         await ListRepository.delete(id)
         set((state) => {
           const lists = state.lists.filter((l) => l.id !== id)
           const selectedListId = state.selectedListId === id ? null : state.selectedListId
-          return { lists, selectedListId, tasks: [] }
+          const pinnedListIds = state.pinnedListIds.filter((listId) => listId !== id)
+          const pinnedTasks = { ...state.pinnedTasks }
+          delete pinnedTasks[id]
+          return { lists, selectedListId, tasks: [], pinnedListIds, pinnedTasks }
         })
       },
 
@@ -160,6 +194,7 @@ export const useAppStore = create<AppState & AppActions>()(
       createTask: async (data) => {
         const task = await TaskRepository.create(data)
         set((state) => ({ tasks: sortTasksFn([...state.tasks, task], state.sortMode) }))
+        await get().refreshPinnedList(task.list_id)
         return task
       },
 
@@ -168,14 +203,22 @@ export const useAppStore = create<AppState & AppActions>()(
         set((state) => ({
           tasks: sortTasksFn(state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)), state.sortMode)
         }))
+        const task = await TaskRepository.getById(id)
+        if (task) {
+          await get().refreshPinnedList(task.list_id)
+        }
       },
 
       deleteTask: async (id: string) => {
         await TaskRepository.delete(id)
+        const task = await TaskRepository.getById(id)
         set((state) => ({
           tasks: state.tasks.filter((t) => t.id !== id),
           selectedTaskId: state.selectedTaskId === id ? null : state.selectedTaskId
         }))
+        if (task) {
+          await get().refreshPinnedList(task.list_id)
+        }
       },
 
       toggleTaskComplete: async (id: string) => {
@@ -198,6 +241,7 @@ export const useAppStore = create<AppState & AppActions>()(
             }
           }
         })
+        await get().refreshPinnedList(task.list_id)
       },
 
       toggleTaskStar: async (id: string) => {
@@ -216,6 +260,7 @@ export const useAppStore = create<AppState & AppActions>()(
         const success = await TaskRepository.indentTask(id, listId)
         if (success) {
           await get().loadTasks(listId)
+          await get().refreshPinnedList(listId)
         }
         return success
       },
@@ -226,6 +271,7 @@ export const useAppStore = create<AppState & AppActions>()(
         const success = await TaskRepository.outdentTask(id, listId)
         if (success) {
           await get().loadTasks(listId)
+          await get().refreshPinnedList(listId)
         }
         return success
       },
@@ -251,8 +297,48 @@ export const useAppStore = create<AppState & AppActions>()(
         set({ expandedListId: id })
       },
 
+      loadPinnedTasks: async (listId: string) => {
+        const tasks = await TaskRepository.getByListId(listId)
+        set((state) => ({
+          pinnedTasks: {
+            ...state.pinnedTasks,
+            [listId]: tasks
+          }
+        }))
+      },
+
+      refreshPinnedList: async (listId: string) => {
+        const { pinnedListIds } = get()
+        if (!pinnedListIds.includes(listId)) return
+        await get().loadPinnedTasks(listId)
+      },
+
+      togglePinnedList: async (id: string) => {
+        const { pinnedListIds } = get()
+        if (pinnedListIds.includes(id)) {
+          set((state) => {
+            const updatedIds = state.pinnedListIds.filter((listId) => listId !== id)
+            const pinnedTasks = { ...state.pinnedTasks }
+            delete pinnedTasks[id]
+            return { pinnedListIds: updatedIds, pinnedTasks }
+          })
+          return
+        }
+
+        set((state) => ({ pinnedListIds: [...state.pinnedListIds, id] }))
+        await get().loadPinnedTasks(id)
+      },
+
+      reorderPinnedLists: (ids: string[]) => {
+        set({ pinnedListIds: ids })
+      },
+
+      setViewMode: (mode: 'list' | 'pinned') => {
+        set({ viewMode: mode })
+      },
+
       hydrate: async () => {
-        const { selectedListId, selectedTaskId, selectedCompletedTask } = get()
+        const { selectedListId, selectedTaskId, selectedCompletedTask, pinnedListIds } = get()
         if (selectedListId) {
           get().loadTasks(selectedListId)
         } else {
@@ -266,6 +352,7 @@ export const useAppStore = create<AppState & AppActions>()(
         }
         await get().loadCompletedTasks()
         get().loadAllLists()
+        await Promise.all(pinnedListIds.map((listId) => get().loadPinnedTasks(listId)))
       }
     }),
     {
@@ -276,7 +363,9 @@ export const useAppStore = create<AppState & AppActions>()(
         sortMode: state.sortMode,
         showCompletedHistory: state.showCompletedHistory,
         expandedListId: state.expandedListId,
-        selectedCompletedTask: state.selectedCompletedTask
+        selectedCompletedTask: state.selectedCompletedTask,
+        pinnedListIds: state.pinnedListIds,
+        viewMode: state.viewMode
       })
     }
   )

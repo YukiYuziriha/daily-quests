@@ -32,8 +32,10 @@ export function TaskDetails() {
 
   if (!task) {
     return (
-      <aside className="w-96 border-l bg-muted/10 h-screen flex items-center justify-center">
-        <p className="text-muted-foreground">select a task to view details</p>
+      <aside className="w-96 border-l bg-white/80 h-full flex items-center justify-center">
+        <div className="text-center text-muted-foreground text-sm">
+          select a task to view details
+        </div>
       </aside>
     )
   }
@@ -81,95 +83,99 @@ export function TaskDetails() {
   }
 
   return (
-    <aside className="w-96 border-l bg-muted/10 h-screen flex flex-col">
-      <header className="border-b p-4 flex items-center justify-between">
-        <h3 className="font-semibold">task details</h3>
+    <aside className="w-96 border-l bg-white/80 h-full flex flex-col">
+      <header className="border-b px-4 py-3 flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">details</div>
+          <h3 className="font-semibold">task details</h3>
+        </div>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { selectTask(null); selectCompletedTask(null) }}>
           <X className="h-4 w-4" />
         </Button>
       </header>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {isCompleted ? (
-          <>
-            <div className="text-lg font-semibold line-through">{task.title}</div>
-            <div className="text-sm text-muted-foreground">
-              completed: {task.completed_at ? new Date(task.completed_at).toLocaleString() : 'unknown'}
-            </div>
-            {task.notes && (
-              <>
-                <Separator />
+        <div className="rounded-2xl border bg-white p-4 shadow-sm space-y-4">
+          {isCompleted ? (
+            <>
+              <div className="text-lg font-semibold line-through">{task.title}</div>
+              <div className="text-sm text-muted-foreground">
+                completed: {task.completed_at ? new Date(task.completed_at).toLocaleString() : 'unknown'}
+              </div>
+              {task.notes && (
+                <>
+                  <Separator />
+                  <div>
+                    <label className="text-sm font-medium">notes</label>
+                    <div className="mt-1 p-3 border rounded-xl bg-muted/30 text-sm">{task.notes}</div>
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                placeholder="task title"
+                className="text-lg font-semibold border-0 bg-muted/30 focus-visible:ring-0"
+              />
+
+              <Textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                onBlur={handleNotesBlur}
+                placeholder="add notes..."
+                rows={4}
+                className="bg-muted/30 border-0 focus-visible:ring-0"
+              />
+
+              <Separator />
+
+              <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium">notes</label>
-                  <div className="mt-1 p-3 border rounded-md bg-muted/30">{task.notes}</div>
+                  <label className="text-sm font-medium">due date</label>
+                  <Input
+                    type="date"
+                    value={dueDate}
+                    onChange={handleDueDateChange}
+                    className="mt-1 rounded-xl"
+                  />
                 </div>
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onBlur={handleTitleBlur}
-              placeholder="task title"
-              className="text-lg font-semibold"
-            />
 
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              onBlur={handleNotesBlur}
-              placeholder="add notes..."
-              rows={4}
-            />
-
-            <Separator />
-
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium">due date</label>
-                <Input
-                  type="date"
-                  value={dueDate}
-                  onChange={handleDueDateChange}
-                  className="mt-1"
-                />
+                <div>
+                  <label className="text-sm font-medium">repeat</label>
+                  <select
+                    value={task.repeat?.freq || 'none'}
+                    onChange={handleRepeatChange}
+                    className="w-full mt-1 px-3 py-2 border rounded-xl bg-background text-sm"
+                  >
+                    <option value="none">no repeat</option>
+                    <option value="DAILY">daily</option>
+                    <option value="WEEKLY">weekly</option>
+                    <option value="MONTHLY">monthly</option>
+                    <option value="YEARLY">yearly</option>
+                  </select>
+                </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">repeat</label>
-                <select
-                  value={task.repeat?.freq || 'none'}
-                  onChange={handleRepeatChange}
-                  className="w-full mt-1 px-3 py-2 border rounded-md bg-background"
+              <Separator />
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={task.starred ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => toggleTaskStar(task.id)}
                 >
-                  <option value="none">no repeat</option>
-                  <option value="DAILY">daily</option>
-                  <option value="WEEKLY">weekly</option>
-                  <option value="MONTHLY">monthly</option>
-                  <option value="YEARLY">yearly</option>
-                </select>
+                  {task.starred ? '⭐ starred' : '☆ star'}
+                </Button>
               </div>
-            </div>
+            </>
+          )}
+        </div>
 
-            <Separator />
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant={task.starred ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => toggleTaskStar(task.id)}
-              >
-                {task.starred ? '⭐ starred' : '☆ star'}
-              </Button>
-            </div>
-          </>
-        )}
-
-        <Separator />
-
-        <div className="text-xs text-muted-foreground">
+        <div className="rounded-2xl border bg-white p-4 shadow-sm text-xs text-muted-foreground">
           list: {list ? (list.deleted_at ? `${list.name} (deleted)` : list.name) : task.list_name}
         </div>
       </div>
