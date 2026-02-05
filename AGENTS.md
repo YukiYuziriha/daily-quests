@@ -7,6 +7,7 @@
 - Optimize for iteration speed
 - Avoid premature abstraction
 - Choose boring tech over bleeding edge
+- Update Project Observations section when discovering non-obvious patterns
 
 ## Code Style
 - Readable > Clean > Clever
@@ -23,3 +24,5 @@
 - Utility functions in lib/utils.ts
 - DB operations in db/
 - Store logic in stores/ (Zustand)
+
+## Project Observations
