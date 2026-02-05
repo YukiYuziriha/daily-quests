@@ -9,7 +9,7 @@ type TaskWithChildren = Task & { children: TaskWithChildren[] }
 
 export class ListRepository {
   static async getAll(): Promise<TaskList[]> {
-    return await db.lists.where('deleted_at').equals(0 as any).toArray()
+    return await db.lists.filter((l) => l.deleted_at === null).toArray()
   }
 
   static async getById(id: string): Promise<TaskList | undefined> {
@@ -63,8 +63,9 @@ export class TaskRepository {
 
   static async getStarred(): Promise<Task[]> {
     return await db.tasks
-      .where('[starred+status]')
-      .equals([true, 'active'] as any)
+      .where('starred')
+      .equals(1)
+      .and((t) => t.status === 'active' && t.deleted_at === null)
       .reverse()
       .sortBy('starred_at')
   }
