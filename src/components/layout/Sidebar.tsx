@@ -1,6 +1,6 @@
-import { useAppStore } from '../stores/appStore'
+import { useAppStore } from '@/stores/appStore'
 import { Plus, Star } from 'lucide-react'
-import { Button } from '../components/ui/button'
+import { Button } from '@/components/ui/button'
 
 export function Sidebar() {
   const { lists, selectedListId, createList, selectList } = useAppStore()

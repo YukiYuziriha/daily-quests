@@ -1,6 +1,6 @@
 import { ulid } from 'ulid'
 import { db } from './index'
-import { Task, TaskList, RepeatRule } from './types'
+import type { Task, TaskList } from './types'
 import { addDays, addWeeks, addMonths, addYears, parseISO } from 'date-fns'
 
 export class ListRepository {
@@ -96,7 +96,6 @@ export class TaskRepository {
     const task = await this.getById(id)
     if (!task) return
 
-    const now = Date.now()
     const isCompleting = task.status === 'active'
 
     if (isCompleting && task.repeat) {
@@ -105,7 +104,7 @@ export class TaskRepository {
 
     await this.update(id, {
       status: isCompleting ? 'completed' : 'active',
-      completed_at: isCompleting ? now : null
+      completed_at: isCompleting ? Date.now() : null
     })
   }
 
@@ -136,7 +135,6 @@ export class TaskRepository {
   }
 
   private static async createNextOccurrence(task: Task): Promise<void> {
-    const now = Date.now()
     let nextDueDate: Date | null = null
 
     if (task.due_date) {
@@ -165,7 +163,6 @@ export class TaskRepository {
       due_date: nextDueDate ? nextDueDate.toISOString().split('T')[0] : null,
       due_time: task.due_time,
       status: 'active',
-      completed_at: null,
       deleted_at: null,
       starred: task.starred,
       repeat: task.repeat

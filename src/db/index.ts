@@ -1,5 +1,5 @@
-import Dexie, { Table } from 'dexie'
-import { Task, TaskList } from './types'
+import Dexie, { type Table } from 'dexie'
+import type { Task, TaskList } from './types'
 
 export class DailyQuestsDB extends Dexie {
   lists!: Table<TaskList>

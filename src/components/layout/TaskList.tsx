@@ -1,13 +1,14 @@
-import { useAppStore } from '../stores/appStore'
-import { Check, MoreVertical, Calendar, Star } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Checkbox } from '../components/ui/checkbox'
-import { Input } from '../components/ui/input'
+import { useAppStore } from '@/stores/appStore'
+import { MoreVertical, Calendar, Star } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import { useState } from 'react'
 import { format } from 'date-fns'
+import type { Task } from '@/db/types'
 
 export function TaskList() {
-  const { tasks, selectedListId, lists, createTask, toggleTaskComplete, toggleTaskStar, selectTask, selectedTaskId } = useAppStore()
+  const { tasks, selectedListId, lists, createTask, toggleTaskComplete, selectTask, selectedTaskId } = useAppStore()
   const [newTaskTitle, setNewTaskTitle] = useState('')
 
   const currentList = lists.find((l) => l.id === selectedListId)
@@ -64,7 +65,7 @@ export function TaskList() {
         )}
 
         <div className="p-2">
-          {tasks.map((task) => (
+          {tasks.map((task: Task) => (
             <div
               key={task.id}
               onClick={() => selectTask(task.id)}

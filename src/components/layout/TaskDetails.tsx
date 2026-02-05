@@ -1,12 +1,11 @@
-import { useAppStore } from '../stores/appStore'
+import { useAppStore } from '@/stores/appStore'
 import { Trash2, X } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Textarea } from '../components/ui/textarea'
-import { Separator } from '../components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Separator } from '@/components/ui/separator'
 import { useEffect, useState } from 'react'
-import { format, parseISO } from 'date-fns'
-import { Task, RepeatRule } from '../db/types'
+import type { Task, RepeatRule } from '@/db/types'
 
 export function TaskDetails() {
   const { tasks, selectedTaskId, updateTask, deleteTask, lists, toggleTaskStar } = useAppStore()
@@ -14,8 +13,8 @@ export function TaskDetails() {
   const [notes, setNotes] = useState('')
   const [dueDate, setDueDate] = useState('')
 
-  const task = tasks.find((t) => t.id === selectedTaskId)
-  const list = task ? lists.find((l) => l.id === task.list_id) : null
+  const task = tasks.find((t: Task) => t.id === selectedTaskId)
+  const list = task ? lists.find((l) => l) : null
 
   useEffect(() => {
     if (task) {

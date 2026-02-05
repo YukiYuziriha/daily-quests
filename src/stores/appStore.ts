@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Task, TaskList, SortMode } from '../db/types'
+import type { Task, TaskList, SortMode } from '../db/types'
 import { ListRepository, TaskRepository } from '../db/repositories'
 
 interface AppState {
@@ -26,6 +26,32 @@ interface AppActions {
   toggleTaskComplete: (id: string) => Promise<void>
   toggleTaskStar: (id: string) => Promise<void>
   setSortMode: (mode: SortMode) => void
+  sortTasks: (tasks: Task[]) => Task[]
+}
+
+const sortTasksFn = (tasks: Task[], sortMode: SortMode): Task[] => {
+  const sorted = [...tasks]
+
+  switch (sortMode) {
+    case 'my_order':
+      return sorted.sort((a, b) => a.order - b.order)
+    case 'date':
+      return sorted.sort((a, b) => {
+        if (!a.due_date && !b.due_date) return a.order - b.order
+        if (!a.due_date) return 1
+        if (!b.due_date) return -1
+        return a.due_date.localeCompare(b.due_date)
+      })
+    case 'starred_recently':
+      return sorted.sort((a, b) => {
+        if (a.starred && !b.starred) return -1
+        if (!a.starred && b.starred) return 1
+        if (!a.starred_at || !b.starred_at) return 0
+        return b.starred_at - a.starred_at
+      })
+    default:
+      return sorted
+  }
 }
 
 export const useAppStore = create<AppState & AppActions>((set, get) => ({
@@ -45,7 +71,7 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
   loadTasks: async (listId: string) => {
     set({ loading: true })
     const tasks = await TaskRepository.getByListId(listId)
-    set({ tasks: get().sortTasks(tasks), loading: false })
+    set({ tasks: sortTasksFn(tasks, get().sortMode), loading: false })
   },
 
   loadStarredTasks: async () => {
@@ -91,14 +117,14 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
 
   createTask: async (data) => {
     const task = await TaskRepository.create(data)
-    set((state) => ({ tasks: get().sortTasks([...state.tasks, task]) }))
+    set((state) => ({ tasks: sortTasksFn([...state.tasks, task], state.sortMode) }))
     return task
   },
 
   updateTask: async (id: string, updates: Partial<Task>) => {
     await TaskRepository.update(id, updates)
     set((state) => ({
-      tasks: get().sortTasks(state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)))
+      tasks: sortTasksFn(state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)), state.sortMode)
     }))
   },
 
@@ -123,7 +149,7 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
         }
       } else {
         return {
-          tasks: get().sortTasks(state.tasks.map((t) => (t.id === id ? task : t)))
+          tasks: sortTasksFn(state.tasks.map((t) => (t.id === id ? task : t)), state.sortMode)
         }
       }
     })
@@ -135,39 +161,16 @@ export const useAppStore = create<AppState & AppActions>((set, get) => ({
     if (!task) return
 
     set((state) => ({
-      tasks: state.tasks.map((t) => (t.id === id ? task : t))
+      tasks: sortTasksFn(state.tasks.map((t) => (t.id === id ? task : t)), state.sortMode)
     }))
   },
 
   setSortMode: (mode: SortMode) => {
-    set({ sortMode: mode })
     const { tasks } = get()
-    set({ tasks: get().sortTasks(tasks) })
+    set({ sortMode: mode, tasks: sortTasksFn(tasks, mode) })
   },
 
   sortTasks: (tasks: Task[]) => {
-    const { sortMode } = get()
-    const sorted = [...tasks]
-
-    switch (sortMode) {
-      case 'my_order':
-        return sorted.sort((a, b) => a.order - b.order)
-      case 'date':
-        return sorted.sort((a, b) => {
-          if (!a.due_date && !b.due_date) return a.order - b.order
-          if (!a.due_date) return 1
-          if (!b.due_date) return -1
-          return a.due_date.localeCompare(b.due_date)
-        })
-      case 'starred_recently':
-        return sorted.sort((a, b) => {
-          if (a.starred && !b.starred) return -1
-          if (!a.starred && b.starred) return 1
-          if (!a.starred_at || !b.starred_at) return 0
-          return b.starred_at - a.starred_at
-        })
-      default:
-        return sorted
-    }
+    return sortTasksFn(tasks, get().sortMode)
   }
 }))
